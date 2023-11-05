@@ -11,7 +11,9 @@ def yolo_model_load():
 
 def visualize():
     model = yolo_model_load()
-    im = "./images/color_image500.jpg"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    im = "./dataset/images/color_image500.jpg"
     results = model(im)
     results.show()
 

@@ -51,7 +51,8 @@ def runner_realsense():
 
     pipeline = realsense_setup()
     model = yolo_model_load()
-
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
     while True:
         frames = pipeline.wait_for_frames()
         depth_frame = frames.get_depth_frame()
