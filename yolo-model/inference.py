@@ -36,7 +36,7 @@ def realsense_setup():
 
 def yolo_model_load():
     # Load YOLOv5 model
-    model = torch.hub.load('/home/cc/yolov5/', 'custom', path='yolo_model/yolov5n.pt', source='local')
+    model = torch.hub.load("./yolov5", 'custom', path='./yolov5n.pt', source='local')
     # model = attempt_load('/home/cc/yolov5/weights')
     model.eval()
 
