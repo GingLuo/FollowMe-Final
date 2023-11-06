@@ -1,11 +1,14 @@
+print("Importing Realsense Library...")
+
+from get_frame import get_frame
+print("Importing OpenCV...")
 import cv2
+print("Importing PyTorch...")
 import torch
+print("Importing Pathlib...")
 from pathlib import Path
-import pyrealsense2 as rs
-
+print("Importing Numpy...")
 import numpy as np
-
-# from yolov5.models.experimental import attempt_load
 
 IMG_H = 480
 IMG_W = 640
@@ -25,18 +28,9 @@ def detection(org_img, boxs,depth_frame):
     return img
     
 
-def realsense_setup():
-    pipeline = rs.pipeline()
-    config = rs.config()
-    config.enable_stream(rs.stream.depth, IMG_W, IMG_H, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, IMG_W, IMG_H, rs.format.bgr8, 30)
-    pipeline.start(config)
-
-    return pipeline
-
 def yolo_model_load():
     # Load YOLOv5 model
-    model = torch.hub.load("./yolov5", 'custom', path='./yolov5n.pt', source='local')
+    model = torch.hub.load("./yolo-model/yolov5", 'custom', path='./yolo-model/yolov5n.pt', source='local')
     # model = attempt_load('/home/cc/yolov5/weights')
     model.eval()
 
@@ -49,32 +43,22 @@ def yolo_model_load():
 
 def runner_realsense():
 
-    pipeline = realsense_setup()
+    cam = get_frame.Camera()
+    print("Loading YOLO Model...")
     model = yolo_model_load()
-    print("Is cuda avaiable:")
+    print("Is cuda available:")
     print(torch.cuda.is_available())
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     while True:
-        frames = pipeline.wait_for_frames()
-        depth_frame = frames.get_depth_frame()
-        color_frame = frames.get_color_frame()
-        # Convert images to numpy arrays
-
-        depth_image = np.asanyarray(depth_frame.get_data())
+        color_image, depth_frame, depth_image = cam.get_pic()
 
         depth_image = depth_image.reshape((depth_image.shape[0],depth_image.shape[1],1))
 
-        color_image = np.asanyarray(color_frame.get_data())
-        # img0 = frame
-        # img = letterbox(img0, new_shape=640)[0]
-
-        # # Convert BGR image to RGB
-        # color_image = np.asanyarray(img0)
         results = model(color_image)
         boxs = results.pandas().xyxy[0].values
 
-        color_img = detection(color_image, boxs,depth_frame)
+        color_img = detection(color_image, boxs, depth_frame)
 
         height, width, channels = color_img.shape
 

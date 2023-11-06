@@ -1,9 +1,11 @@
+from .get_frame import get_frame
 import cv2
 import torch
 from pathlib import Path
 import pyrealsense2 as rs
 
 import numpy as np
+
 
 # from yolov5.models.experimental import attempt_load
 
@@ -25,15 +27,6 @@ def detection(org_img, boxs,depth_frame):
     return img
     
 
-def realsense_setup():
-    pipeline = rs.pipeline()
-    config = rs.config()
-    config.enable_stream(rs.stream.depth, IMG_W, IMG_H, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, IMG_W, IMG_H, rs.format.bgr8, 30)
-    pipeline.start(config)
-
-    return pipeline
-
 def yolo_model_load():
     # Load YOLOv5 model
     model = torch.hub.load("./yolov5", 'custom', path='./yolov5n.pt', source='local')
@@ -49,23 +42,24 @@ def yolo_model_load():
 
 def runner_realsense():
 
-    pipeline = realsense_setup()
+    cam = get_frame.Camera()
     model = yolo_model_load()
     print("Is cuda avaiable:")
     print(torch.cuda.is_available())
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     while True:
-        frames = pipeline.wait_for_frames()
-        depth_frame = frames.get_depth_frame()
-        color_frame = frames.get_color_frame()
+        color_image, depth_color, depth_image = cam.get_pic()
+        #frames = pipeline.wait_for_frames()
+        #depth_frame = frames.get_depth_frame()
+        #color_frame = frames.get_color_frame()
         # Convert images to numpy arrays
 
-        depth_image = np.asanyarray(depth_frame.get_data())
+        #depth_image = np.asanyarray(depth_frame.get_data())
 
         depth_image = depth_image.reshape((depth_image.shape[0],depth_image.shape[1],1))
 
-        color_image = np.asanyarray(color_frame.get_data())
+        #color_image = np.asanyarray(color_frame.get_data())
         # img0 = frame
         # img = letterbox(img0, new_shape=640)[0]
 
