@@ -1,0 +1,8 @@
+path: .
+
+# Classes
+# 0 - 79 are yolov5's original classes. Reuses 56, 12, 13
+names:
+  80: door
+  81: window
+  82: desk
