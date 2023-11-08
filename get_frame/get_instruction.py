@@ -8,7 +8,8 @@ import os
 from collections import defaultdict
 import pyrealsense2.pyrealsense2 as rs
 from get_frame import *
-
+import pyttsx3
+import math
 minimum_detection_distance = 0.5 
 maximum_detection_distance = 10
 selection_width = 5
@@ -30,7 +31,7 @@ def receive_lidar_map():
 
 # @brief Function that should give us object labels.
 # @return List of list contains top left, bottom right corner indices and label. 
-def receive_labels_map():    
+def receive_labels_map(yolo_output):    
     # reference: https://github.com/ultralytics/yolov5/issues/5304
     # Example output:
     #      xmin    ymin    xmax   ymax  confidence  class    name
@@ -38,15 +39,20 @@ def receive_labels_map():
     # 1  433.50  433.50   517.5  714.5    0.687988     27     tie
     # 2  114.75  195.75  1095.0  708.0    0.624512      0  person
     # 3  986.00  304.00  1028.0  420.0    0.286865     27     tie
-    return [[(300, 300), (400, 400), "Person"]] #example output
+    #return [[(300, 300), (400, 400), "Person"]] #example output
     #yolo_output = [] # source of output
-    #result = yolo_output.pandas().xyxy[0]
-    #top_left = zip(result['xmin'].toList(), result['ymin'].toList())
-    #bottom_right = zip(result['xmax'].toList(), result['ymax'].toList())
-    #names = result['name'].toList()
-    #preprocess_list = zip(top_left, bottom_right, names)
-    #labels = map(preprocess_list, lambda x: list(x))
-    #return labels
+    result = yolo_output.pandas().xyxy[0]
+    top_left = list(zip(result['xmin'].values.tolist(), result['ymin'].values.tolist()))
+    #print("top_left:", top_left)
+    bottom_right = list(zip(result['xmax'].values.tolist(), result['ymax'].values.tolist()))
+    #print("bottom_right:",bottom_right)
+    names = result['name'].values.tolist()
+    preprocess_list = list(zip(top_left, bottom_right, names))
+    #print("preprocess list:",preprocess_list)
+
+    #labels = list(map(preprocess_list, list()))
+    #print("labels:", labels)
+    return preprocess_list
     
 
 # @brief a selective depth calculation algorithm which only consider the small "+" section 
@@ -54,8 +60,8 @@ def receive_labels_map():
 # @return the average width to the closest 0.1m that we predicted. 
 def object_depth_measurement_linear(depth_image, label, depth_scale):
     top_left, bottom_right, l = label 
-    minx, miny = top_left
-    maxx, maxy = bottom_right
+    (minx, miny) = top_left
+    (maxx, maxy) = bottom_right
     depth_list = dict()
     midx, midy = (minx + maxx) // 2, (maxy + miny) // 2
     # consider horizontal line with width selection_width and height being half of the label box
@@ -77,14 +83,20 @@ def object_depth_measurement_linear(depth_image, label, depth_scale):
 # @brief a brute force distance measuring algorithm that considers all pixels in box
 # @return the depth of the object from the camera
 def object_depth_measurement_square(depth_image, label, depth_scale):
+    #print("the label is:", label)
     top_left, bottom_right, l = label 
-    minx, miny = top_left
-    maxx, maxy = bottom_right
+    #print("at distance function:",top_left, bottom_right, l)
+    (minx, miny) = top_left
+    minx = math.floor(minx)
+    miny = math.floor(miny)
+    (maxx, maxy) = bottom_right
+    maxx = math.floor(maxx)
+    maxy = math.floor(maxy)
     depth_list = defaultdict(int)
     depth_list[0] = 1
-    for x in range(minx, maxx):
-        for y in range(miny, maxy):
-            pixel_depth = depth_image[x][y]
+    for x in range(miny, maxy):
+        for y in range(minx, maxx):
+            pixel_depth = depth_image[x][y][0]
             if pixel_depth > minimum_detection_distance/depth_scale and pixel_depth < maximum_detection_distance/depth_scale:
                 #round to nearest tenth
                 #print(x, y, pixel_depth)
@@ -93,7 +105,10 @@ def object_depth_measurement_square(depth_image, label, depth_scale):
     return max(depth_list, key=lambda x: depth_list[x]) * depth_scale
 
 def textToSpeaker(text):
-    os.system("say " +  text)
+    engine = pyttsx3.init('espeak')
+    engine.say(text)
+    engine.runAndWait()
+    #engine.stop()
     return
 
 def testing_Object():
@@ -122,7 +137,10 @@ def testing_Object():
     
 
 if __name__ == "__main__":
-    testing_Object()
+    #testing_Object()
+    engine = pyttsx3.init('espeak')
+    engine.say("Hey George How are you doing!")
+    engine.runAndWait()
     # setup_camera()
     # try: 
     #     while True:

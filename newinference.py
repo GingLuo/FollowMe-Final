@@ -9,7 +9,7 @@ print("Importing Pathlib...")
 from pathlib import Path
 print("Importing Numpy...")
 import numpy as np
-
+from get_frame import get_instruction
 IMG_H = 480
 IMG_W = 640
 
@@ -50,16 +50,34 @@ def runner_realsense():
     print(torch.cuda.is_available())
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
+    
     while True:
         color_image, depth_frame, depth_image = cam.get_pic()
-
+        depth_scale = cam.depth_scale
         depth_image = depth_image.reshape((depth_image.shape[0],depth_image.shape[1],1))
 
         results = model(color_image)
         boxs = results.pandas().xyxy[0].values
-
+        #print(results)
         color_img = detection(color_image, boxs, depth_frame)
+        labels = get_instruction.receive_labels_map(results)
 
+        itemsFound = dict()
+        plurality = set()
+        for label in labels:
+            depth = get_instruction.object_depth_measurement_square(depth_image, label, depth_scale)
+            if label[2] in itemsFound:
+                itemsFound[label[2]] = min(itemsFound[label[2]], depth)
+                plurality.add(label[2])
+            else:
+            	itemsFound[label[2]] = depth
+        print("received:",itemsFound, plurality)
+        for item in itemsFound:
+            distance = itemsFound[item]
+            #if item in plurality:
+            text = "there is a " + item + " " + str(round(distance,1)) + " ahead"
+            get_instruction.textToSpeaker(text)
+            print(text)
         height, width, channels = color_img.shape
 
         combined_image = np.zeros((height, 2 * width, channels), dtype=np.uint8)
