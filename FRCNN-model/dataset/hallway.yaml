@@ -6,3 +6,11 @@ names:
   80: door
   81: window
   82: desk
+
+1 -> chair
+2 -> door
+3 -> window
+4 -> desk
+5 -> bench
+6 -> pole (parking meter)
+(Need to minus one in the output)
