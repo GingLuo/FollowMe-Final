@@ -62,23 +62,28 @@ def object_depth_measurement_linear(depth_image, label, depth_scale):
     top_left, bottom_right, l = label 
     (minx, miny) = top_left
     (maxx, maxy) = bottom_right
-    depth_list = dict()
+    minx = math.floor(minx)
+    miny = math.floor(miny)
+    maxx = math.floor(maxx)
+    maxy = math.floor(maxy)
+    depth_list = defaultdict(int)
+    depth_list[0] = 1
     midx, midy = (minx + maxx) // 2, (maxy + miny) // 2
     # consider horizontal line with width selection_width and height being half of the label box
-    for x in range(max(midx - selection_width, minx), min(midx + selection_width, maxx)):
-        for y in range((miny+midy)//2, (midy + maxy)//2):
-            pixel_depth = depth_image[x][y]
+    for y in range(max(midx - selection_width, minx), min(midx + selection_width, maxx)):
+        for x in range((miny+midy)//2, (midy + maxy)//2):
+            pixel_depth = depth_image[x][y][0]
             if pixel_depth > minimum_detection_distance/depth_scale and pixel_depth < maximum_detection_distance/depth_scale:
                 #round to nearest tenth
-                depth_list.append(round(pixel_depth,1))
+                depth_list[round(pixel_depth,1)] += 1
     # consider horizontal line with height selection_width and width being half of the label box
-    for x in range((minx + midx)//2, (midx + maxx)//2):
-        for y in range(max(midy - selection_width, miny), min(midy - selection_width, miny)):
-            pixel_depth = depth_image[x][y]
+    for y in range((minx + midx)//2, (midx + maxx)//2):
+        for x in range(max(midy - selection_width, miny), min(midy + selection_width, maxy)):
+            pixel_depth = depth_image[x][y][0]
             if pixel_depth > minimum_detection_distance/depth_scale and pixel_depth < maximum_detection_distance/depth_scale:
                 #round to nearest tenth
-                depth_list.append(round(pixel_depth,1))
-    return max(depth_list, key=lambda x: depth_list[x])
+                depth_list[round(pixel_depth,1)] += 1
+    return max(depth_list, key=lambda x: depth_list[x]) * depth_scale
 
 # @brief a brute force distance measuring algorithm that considers all pixels in box
 # @return the depth of the object from the camera
@@ -133,6 +138,7 @@ def testing_Object():
         object_label = label[2]
         text = "Hey George, there is a " + object_label + " " + str(round(result,1)) + " meters in front of you"
         print(text)
+        
         textToSpeaker(text)
     
 

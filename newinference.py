@@ -10,6 +10,8 @@ from pathlib import Path
 print("Importing Numpy...")
 import numpy as np
 from get_frame import get_instruction
+import os
+import multiprocessing
 IMG_H = 480
 IMG_W = 640
 
@@ -23,7 +25,7 @@ def detection(org_img, boxs,depth_frame):
     x, y = 320, 240
     distance = depth_frame.get_distance(x, y)
 
-    print(f"Distance at pixel ({x}, {y}): {distance} meters")
+   #print(f"Distance at pixel ({x}, {y}): {distance} meters")
 
     return img
     
@@ -35,6 +37,27 @@ def yolo_model_load():
     model.eval()
 
     return model
+
+def give_instruction(labels, depth_image, depth_scale):
+    itemsFound = dict()
+    plurality = set()
+    for label in labels:
+        depth = get_instruction.object_depth_measurement_linear(depth_image, label, depth_scale)
+        if label[2] in itemsFound:
+            itemsFound[label[2]] = min(itemsFound[label[2]], depth)
+            plurality.add(label[2])
+        else:
+            itemsFound[label[2]] = depth
+            	        
+    for item in itemsFound:
+        distance = itemsFound[item]
+        if distance != 0:
+        ##sif item in plurality:
+            text = item + " " + str(round(distance,1)) + "meters ahead"
+            p = multiprocessing.Process(target=get_instruction.textToSpeaker, args=(text,))
+            p.start()
+            p.join()
+        print(text)
 
 
 # Set up camera
@@ -50,50 +73,44 @@ def runner_realsense():
     print(torch.cuda.is_available())
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    
+    count = 0
+    p = None
     while True:
+        
         color_image, depth_frame, depth_image = cam.get_pic()
         depth_scale = cam.depth_scale
         depth_image = depth_image.reshape((depth_image.shape[0],depth_image.shape[1],1))
 
-        results = model(color_image)
+        results = model(color_image) 
         boxs = results.pandas().xyxy[0].values
-        #print(results)
+
         color_img = detection(color_image, boxs, depth_frame)
         labels = get_instruction.receive_labels_map(results)
+        count += 1
+        if count == 10:
+            if p != None:
+                p.join()
+            p = multiprocessing.Process(target=give_instruction, args=(labels, depth_image, depth_scale))
+            p.start()
+            #p.join()
+            count = 0	
+        else:
+            height, width, channels = color_img.shape
 
-        itemsFound = dict()
-        plurality = set()
-        for label in labels:
-            depth = get_instruction.object_depth_measurement_square(depth_image, label, depth_scale)
-            if label[2] in itemsFound:
-                itemsFound[label[2]] = min(itemsFound[label[2]], depth)
-                plurality.add(label[2])
-            else:
-            	itemsFound[label[2]] = depth
-        print("received:",itemsFound, plurality)
-        for item in itemsFound:
-            distance = itemsFound[item]
-            #if item in plurality:
-            text = "there is a " + item + " " + str(round(distance,1)) + " ahead"
-            get_instruction.textToSpeaker(text)
-            print(text)
-        height, width, channels = color_img.shape
+            combined_image = np.zeros((height, 2 * width, channels), dtype=np.uint8)
 
-        combined_image = np.zeros((height, 2 * width, channels), dtype=np.uint8)
+            combined_image[:, :width, :] =color_img
 
-        combined_image[:, :width, :] =color_img
+            # Copy the second image to the right half of the combined image
+            combined_image[:, width:, :] = depth_image
 
-        # Copy the second image to the right half of the combined image
-        combined_image[:, width:, :] = depth_image
-
-        cv2.imshow('img', combined_image)
-
+           # cv2.imshow('img', combined_image)
+ 
         # cv2.imshow('img', depth_image)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        
     # Release the camera and close the OpenCV window
     # cap.release()
     cv2.destroyAllWindows()
