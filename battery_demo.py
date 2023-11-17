@@ -1,68 +1,44 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-# This file is part of the jetson_stats package (https://github.com/rbonghi/jetson_stats or http://rnext.it).
-# Copyright (c) 2019-2023 Raffaello Bonghi.
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# Don't forget to do this:
+# sudo pip install Jetson.GPIO
 
-from jtop import jtop
+import Jetson.GPIO as GPIO
+import time
+import pyttsx3
+# Pin Definitions
+input_pin = 31  # BCM pin 18, BOARD pin 12
 
+def low_bat():
+    while True:
+        value = GPIO.input(input_pin)
+        if (value == GPIO.HIGH):
+            engine = pyttsx3.init('espeak')
+            engine.say("Low Battery")
+            engine.runAndWait()
+        else:
+            return
 
-if __name__ == "__main__":
+def main():
+    prev_value = None
+    
+    # Pin Setup:
+    GPIO.setmode(GPIO.BOARD)  # BCM pin-numbering scheme from Raspberry Pi
+    GPIO.setup(input_pin, GPIO.IN)  # set pin as an input pin
+    GPIO.add_event_detect(input_pin, GPIO.RISING, callback=low_bat, bouncetime=10, polltime=0.2)
+    print("Starting demo now! Press CTRL+C to exit")
+    try:
+        while True:
+            # value = GPIO.input(input_pin)
+            # if value != prev_value:
+            #     if value == GPIO.HIGH:
+            #         value_str = "HIGH"
+            #     else:
+            #         value_str = "LOW"
+            #     print("Value read from pin {} : {}".format(input_pin,
+            #                                                value_str))
+            #     prev_value = value
+            time.sleep(1)
+    finally:
+        GPIO.cleanup()
 
-    print("All accessible jtop properties")
-
-    with jtop() as jetson:
-        # boards
-        print('*** board ***')
-        print(jetson.board)
-        # jetson.ok() will provide the proper update frequency
-        while jetson.ok():
-            # CPU
-            print('*** CPUs ***')
-            print(jetson.cpu)
-            # CPU
-            print('*** Memory ***')
-            print(jetson.memory)
-            # GPU
-            print('*** GPU ***')
-            print(jetson.gpu)
-            # Engines
-            print('*** engine ***')
-            print(jetson.engine)
-            # nvpmodel
-            print('*** NV Power Model ***')
-            print(jetson.nvpmodel)
-            # jetson_clocks
-            print('*** jetson_clocks ***')
-            print(jetson.jetson_clocks)
-            # Status disk
-            print('*** disk ***')
-            print(jetson.disk)
-            # Status fans
-            print('*** fan ***')
-            print(jetson.fan)
-            # uptime
-            print('*** uptime ***')
-            print(jetson.uptime)
-            # local interfaces
-            print('*** local interfaces ***')
-            print(jetson.local_interfaces)
-            # Temperature
-            print('*** temperature ***')
-            print(jetson.temperature)
-            # Power
-            print('*** power ***')
-            print(jetson.power)
-# EOF
+if __name__ == '__main__':
+    main()
