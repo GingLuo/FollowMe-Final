@@ -9,13 +9,14 @@ import signal
 # Pin Definitions
 input_pin = 31  # BCM pin 18, BOARD pin 12
 
-def low_bat():
+def low_bat(something):
     while True:
         value = GPIO.input(input_pin)
         if (value == GPIO.HIGH):
-            engine = pyttsx3.init('espeak')
-            engine.say("Low Battery")
-            engine.runAndWait()
+            #engine = pyttsx3.init('espeak')
+            #engine.say("Low Battery")
+            print("low-battery")
+            #engine.runAndWait()
         else:
             return
 
@@ -29,7 +30,7 @@ def main():
     # Pin Setup:
     GPIO.setmode(GPIO.BOARD)  # BCM pin-numbering scheme from Raspberry Pi
     GPIO.setup(input_pin, GPIO.IN)  # set pin as an input pin
-    GPIO.add_event_detect(input_pin, GPIO.RISING, callback=low_bat, bouncetime=10, polltime=0.2)
+    GPIO.add_event_detect(input_pin, GPIO.RISING, callback=low_bat, bouncetime=10)
     print("Starting demo now! Press CTRL+C to exit")
     signal.signal(signal.SIGINT, signal_handler)
     signal.pause()
