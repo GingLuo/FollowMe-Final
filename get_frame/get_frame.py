@@ -2,7 +2,7 @@ import pyrealsense2.pyrealsense2 as rs
 import numpy as np
 import cv2
 import os
-
+import time
 class Camera:
     def __init__(self) -> None:
         self.counter = 0
@@ -47,8 +47,12 @@ class Camera:
 
 if __name__ == "__main__":
     cam = Camera()
+    start = True
     try:
         while True:
+            if start:
+                time.sleep(5)
+                start = False
             path1, path2, arr3 = cam.get_pic()
             rgb = cv2.imread(path1, cv2.IMREAD_COLOR)
             depthcolor = cv2.imread(path2, cv2.IMREAD_COLOR)

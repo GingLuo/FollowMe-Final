@@ -10,13 +10,16 @@ import signal
 input_pin = 31  # BCM pin 18, BOARD pin 12
 
 def low_bat(something):
+    i = 0
     while True:
         value = GPIO.input(input_pin)
         if (value == GPIO.HIGH):
-            #engine = pyttsx3.init('espeak')
-            #engine.say("Low Battery")
-            print("low-battery")
-            #engine.runAndWait()
+            engine = pyttsx3.init('espeak')
+            engine.setProperty('volumn', 0.7)
+            engine.say("Low Battery")
+            print("low-battery + %d", i)
+            i += 1
+            engine.runAndWait()
         else:
             return
 

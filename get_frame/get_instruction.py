@@ -111,8 +111,11 @@ def object_depth_measurement_square(depth_image, label, depth_scale):
 
 def textToSpeaker(text):
     engine = pyttsx3.init('espeak')
+    engine.setProperty('volumn', 0.5)
     engine.say(text)
+    
     engine.runAndWait()
+    
     #engine.stop()
     return
 
