@@ -69,7 +69,7 @@ def give_instruction(labels, depth_image, depth_scale):
 
 
 def runner_realsense():
-    print("Setting fild descriptors...")
+    print("Setting file descriptors...")
     depth_fd = open('depth.npy', 'rb')
     rgb_fd = cv2.VideoCapture('rgb.avi') 
     try:

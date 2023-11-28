@@ -70,8 +70,8 @@ def give_instruction(labels, depth_image, depth_scale):
 
 def runner_realsense():
     print("Setting file descriptors...")
-    depth_fd = open('depth.npy', 'wb')
-    rgb_fd = cv2.VideoWriter('rgb.avi', cv2.VideoWriter_fourcc(*'MJPG'), 
+    depth_fd = open('depth0.npy', 'wb')
+    rgb_fd = cv2.VideoWriter('rgb0.avi', cv2.VideoWriter_fourcc(*'MJPG'), 
                             10, IMG_W, IMG_H) 
     try:
         print("Loading YOLO Model...")
@@ -82,6 +82,7 @@ def runner_realsense():
         model = model.to(device)
         cam = get_frame.Camera()
         count = 0
+        piccount = 0
         p = None
         while True:
             
@@ -100,12 +101,14 @@ def runner_realsense():
             labels = get_instruction.receive_labels_map(results)
             count += 1
             if count == 10:
+                cv2.imwrite("pic/testing/color_image"+str(piccount)+ ".jpg", color_image)
                 if p != None:
                     p.join()
                 p = multiprocessing.Process(target=give_instruction, args=(labels, depth_image, depth_scale))
                 p.start()
                 #p.join()
-                count = 0	
+                count = 0
+                piccount += 1	
             # else:
                 # height, width, channels = color_img.shape
 
