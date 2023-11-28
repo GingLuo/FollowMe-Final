@@ -1,5 +1,4 @@
 print("Importing Realsense Library...")
-
 from get_frame import get_frame
 print("Importing OpenCV...")
 import cv2
