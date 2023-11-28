@@ -13,9 +13,15 @@ from get_frame import get_instruction
 import os
 import multiprocessing
 import signal
+import pandas as pd
+import collections
 print("Done Importing.")
 IMG_H = 480
 IMG_W = 640
+
+plurality = collections.defaultdict(int)
+#logging.basicConfig(filename="latencyLog4.log", level=logging.INFO)
+whiteList = set(["person", "door", "window", "desk", "bicycle", "parking meter", "bench", "backpack", "umbrella", "suitcase", "chair", "couch", "dining table", "tv", "laptop", "sink"])
 
 def detection(org_img, boxs,depth_frame):
     img = org_img.copy()
@@ -34,32 +40,41 @@ def detection(org_img, boxs,depth_frame):
 
 def yolo_model_load():
     # Load YOLOv5 model
-    model = torch.hub.load("/home/followme/Desktop/FollowMe-Final/yolo-model/yolov5", 'custom', path='/home/followme/Desktop/FollowMe-Final/yolo-model/yolov5n.pt', source='local')
+    model = torch.hub.load("/home/followme/Desktop/FollowMe-Final/yolo-model/yolov5", 'custom', path='/home/followme/Desktop/FollowMe-Final/yolo-model/best_m1.pt', source='local')
     # model = attempt_load('/home/cc/yolov5/weights')
+    model2 = torch.hub.load("/home/followme/Desktop/FollowMe-Final/yolo-model/yolov5", 'custom', path='/home/followme/Desktop/FollowMe-Final/yolo-model/yolov5n.pt', source='local')
     model.eval()
+    model2.eval()
 
-    return model
+    return model, model2
 
 def give_instruction(labels, depth_image, depth_scale):
     itemsFound = dict()
-    plurality = set()
     for label in labels:
+        print("label is:", label)
+        if label[2] not in whiteList:
+            continue
         depth = get_instruction.object_depth_measurement_linear(depth_image, label, depth_scale)
-        if label[2] in itemsFound:
-            itemsFound[label[2]] = min(itemsFound[label[2]], depth)
-            plurality.add(label[2])
-        else:
+        if plurality[label[2]] == 0:
             itemsFound[label[2]] = depth
-            	        
+            plurality[label[2]] += 1
+        else:
+            itemsFound[label[2]] = min(itemsFound[label[2]], depth)
+            plurality[label[2]] += 1
+    newItemsFound = dict()
     for item in itemsFound:
         distance = itemsFound[item]
-        if distance != 0:
+        if distance != 0 and plurality[item] > 0:
         ##sif item in plurality:
+            plurality[item] = 0
             text = item + " " + str(round(distance,1)) + "meters ahead"
             p = multiprocessing.Process(target=get_instruction.textToSpeaker, args=(text,))
             p.start()
             p.join()
             print(text)
+        else:
+            newItemsFound[item] = itemsFound[item]
+    itemsFound = newItemsFound
 
 
 # Set up camera
@@ -71,32 +86,33 @@ def give_instruction(labels, depth_image, depth_scale):
 def runner_realsense():
     print("Setting file descriptors...")
     depth_fd = open('depth0.npy', 'wb')
-    rgb_fd = cv2.VideoWriter('rgb0.avi', cv2.VideoWriter_fourcc(*'MJPG'), 10, (IMG_W, IMG_H)) 
+    rgb_fd = cv2.VideoWriter('rgb0.avi', cv2.VideoWriter_fourcc(*'MPEG'), 10, (IMG_W, IMG_H)) 
     try:
         print("Loading YOLO Model...")
-        model = yolo_model_load()
+        model, model2 = yolo_model_load()
         print("Is cuda available:")
         print(torch.cuda.is_available())
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
+        model2 = model2.to(device)
         cam = get_frame.Camera()
         count = 0
-        piccount = 0
         p = None
+        piccount = 0
+        depth_scale = cam.depth_scale
+        np.save(depth_fd, np.array(depth_scale))
         while True:
-            
             color_image, depth_frame, depth_image = cam.get_pic()
-
-            depth_scale = cam.depth_scale
+            
             depth_image = depth_image.reshape((depth_image.shape[0],depth_image.shape[1],1))
-
+            results1 = model(color_image)
+            results2 = model2(color_image)
+            results = pd.concat([results1.pandas().xyxy[0], results2.pandas().xyxy[0]], ignore_index=True)
+            boxs = results.values
             rgb_fd.write(color_image)
             np.save(depth_fd, depth_image)
-
-            results = model(color_image) 
-            boxs = results.pandas().xyxy[0].values
-
-            color_img = detection(color_image, boxs, depth_frame)
+            #print(depth_image[50][50][0])
+            #color_img = detection(color_image, boxs, depth_frame)
             labels = get_instruction.receive_labels_map(results)
             count += 1
             if count == 10:
