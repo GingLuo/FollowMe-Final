@@ -12,8 +12,10 @@ def visualize():
     model = yolo_model_load()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    im = "./dataset/images/color_image8700.jpg"
+    im = "./dataset/images/hamerschlag_color_image1000.jpg"
     results = model(im)
+    print(type(results))
+    print(results.shape)
     results.show()
 
     print(results.pandas().xyxy[0])

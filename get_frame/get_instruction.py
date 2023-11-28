@@ -41,7 +41,8 @@ def receive_labels_map(yolo_output):
     # 3  986.00  304.00  1028.0  420.0    0.286865     27     tie
     #return [[(300, 300), (400, 400), "Person"]] #example output
     #yolo_output = [] # source of output
-    result = yolo_output.pandas().xyxy[0]
+    #result = yolo_output.pandas().xyxy[0]
+    result = yolo_output
     top_left = list(zip(result['xmin'].values.tolist(), result['ymin'].values.tolist()))
     #print("top_left:", top_left)
     bottom_right = list(zip(result['xmax'].values.tolist(), result['ymax'].values.tolist()))
