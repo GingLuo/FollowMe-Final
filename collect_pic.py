@@ -71,8 +71,7 @@ def give_instruction(labels, depth_image, depth_scale):
 def runner_realsense():
     print("Setting file descriptors...")
     depth_fd = open('depth0.npy', 'wb')
-    rgb_fd = cv2.VideoWriter('rgb0.avi', cv2.VideoWriter_fourcc(*'MJPG'), 
-                            10, IMG_W, IMG_H) 
+    rgb_fd = cv2.VideoWriter('rgb0.avi', cv2.VideoWriter_fourcc(*'MJPG'), 10, (IMG_W, IMG_H)) 
     try:
         print("Loading YOLO Model...")
         model = yolo_model_load()
