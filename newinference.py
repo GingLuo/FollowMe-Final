@@ -20,7 +20,7 @@ IMG_W = 640
 
 plurality = collections.defaultdict(int)
 logging.basicConfig(filename="latencyLog4.log", level=logging.INFO)
-whiteList = set(["person", "door", "window", "desk", "bicycle", "parking meter", "bench", "backpack", "umbrella", "suitcase", "chair", "couch", "dining table", "tv", "laptop", "sink"])
+whiteList = set(["person", "door", "desk", "bicycle", "bench", "backpack", "umbrella", "suitcase", "chair", "couch", "dining table", "tv", "laptop", "sink"])
 
 def detection(org_img, boxs,depth_frame):
     img = org_img.copy()
@@ -53,6 +53,17 @@ def give_instruction(labels, depth_image, depth_scale):
         print("label is:", label)
         if label[2] not in whiteList:
             continue
+        minx, miny = label[0]
+        maxx, maxy = label[1]
+        avey, avex = (miny + maxy) // 2, (minx + miny) // 2
+        direction = "ahead"
+        if avex > 390:
+           direction = "on your right"
+        elif avex < 240:
+            direction = "on your left"
+        if avex > 550  or avex < 90:
+            print("the label is on side so omited")
+            continue 
         depth = get_instruction.object_depth_measurement_linear(depth_image, label, depth_scale)
         if plurality[label[2]] == 0:
             itemsFound[label[2]] = depth
@@ -66,11 +77,11 @@ def give_instruction(labels, depth_image, depth_scale):
         if distance != 0 and plurality[item] > 0:
         ##sif item in plurality:
             plurality[item] = 0
-            text = item + " " + str(round(distance,1)) + "meters ahead"
+            text = item + " " + str(round(distance,1)) + "meters" + direction
             p = multiprocessing.Process(target=get_instruction.textToSpeaker, args=(text,))
             p.start()
             p.join()
-            print(text)
+            #print(text)
         else:
             newItemsFound[item] = itemsFound[item]
     itemsFound = newItemsFound
@@ -93,6 +104,9 @@ def runner_realsense():
     cam = get_frame.Camera()
     count = 0
     p = None
+    startAnnounce = "Welcome, System is ready"
+    #get_instruction.textToSpeaker(startAnnounce)
+    #p = multiprocessing.Process(target=get_instruction.textToSpeaker,args=(startAnnounce, ))
     while True:
         startTime = time.time()
         color_image, depth_frame, depth_image = cam.get_pic()
