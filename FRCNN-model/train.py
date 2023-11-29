@@ -13,7 +13,7 @@ from loss_and_anchor import Loss, anchor
 from detector.mydetector import mydetector
 
 parser = argparse.ArgumentParser(description='18794 detection')
-parser.add_argument('--data_path', default='/afs/ece.cmu.edu/usr/yichuanl/Private/18794/hw/capstone/my_dataset/label.txt')
+parser.add_argument('--data_path', default='/afs/ece.cmu.edu/usr/yichuanl/Private/18794/hw/FollowMe-Final/FRCNN-model/dataset/label.txt')
 parser.add_argument('--num_workers', default=4, type=int)
 parser.add_argument('--lr', default=3e-4, type=float)
 parser.add_argument('--momentum', default=0.9, type=float)

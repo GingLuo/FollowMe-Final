@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description='18794 detection')
 parser.add_argument('--ckpt', default='./weights/Resnet50_Final.pth',
                     type=str, help='trained checkpoint')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
-parser.add_argument('--dataset_folder', default='/afs/ece.cmu.edu/usr/yichuanl/Private/18794/hw/capstone/my_dataset/train/images/', type=str, help='dataset path')
+parser.add_argument('--dataset_folder', default='/afs/ece.cmu.edu/usr/yichuanl/Private/18794/hw/FollowMe-Final/FRCNN-model/dataset/images/', type=str, help='dataset path')
 parser.add_argument('--confidence_threshold', default=0.65, type=float, help='confidence_threshold')
 parser.add_argument('--top_k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms_threshold', default=0.1, type=float, help='nms_threshold')

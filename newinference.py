@@ -116,6 +116,11 @@ def runner_realsense():
         results1 = model(color_image)
         results2 = model2(color_image)
         results = pd.concat([results1.pandas().xyxy[0], results2.pandas().xyxy[0]], ignore_index=True)
+
+        # Show images
+        results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), 0)
+        results1.save(save_dir='./yolo_images', exist_ok=True)
+
         
         boxs = results.values
 
