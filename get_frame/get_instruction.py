@@ -12,7 +12,7 @@ import pyttsx3
 import math
 minimum_detection_distance = 0.5 
 maximum_detection_distance = 10
-selection_width = 5
+selection_width = 20
 
 # @brief Function that would get lidar map 
 # @return The return value of function should be 640 x 480 2d array with float value indicating distance.

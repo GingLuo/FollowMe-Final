@@ -55,16 +55,18 @@ def give_instruction(labels, depth_image, depth_scale):
             continue
         minx, miny = label[0]
         maxx, maxy = label[1]
-        avey, avex = (miny + maxy) // 2, (minx + miny) // 2
+        avey, avex = (miny + maxy) // 2, (minx + maxx) // 2
+        print("ave x, y is", str(avex), " and ", str(avey))
         direction = "ahead"
-        if avex > 390:
+        if avex > 520:
            direction = "on your right"
-        elif avex < 240:
+        if avex < 120:
             direction = "on your left"
-        if avex > 550  or avex < 90:
+        if avex > 590  or avex < 50:
             print("the label is on side so omited")
             continue 
         depth = get_instruction.object_depth_measurement_linear(depth_image, label, depth_scale)
+        print("the depth we received is: ", str(depth))
         if plurality[label[2]] == 0:
             itemsFound[label[2]] = depth
             plurality[label[2]] += 1
@@ -75,13 +77,11 @@ def give_instruction(labels, depth_image, depth_scale):
     for item in itemsFound:
         distance = itemsFound[item]
         if distance != 0 and plurality[item] > 0:
-        ##sif item in plurality:
             plurality[item] = 0
             text = item + " " + str(round(distance,1)) + "meters" + direction
             p = multiprocessing.Process(target=get_instruction.textToSpeaker, args=(text,))
             p.start()
             p.join()
-            #print(text)
         else:
             newItemsFound[item] = itemsFound[item]
     itemsFound = newItemsFound
@@ -117,10 +117,8 @@ def runner_realsense():
         results2 = model2(color_image)
         results = pd.concat([results1.pandas().xyxy[0], results2.pandas().xyxy[0]], ignore_index=True)
 
-        # Show images
-        results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), 0)
-        results1.save(save_dir='./yolo_images', exist_ok=True)
 
+        
         
         boxs = results.values
 
@@ -132,6 +130,10 @@ def runner_realsense():
         if count == 10:
             if p != None:
                 p.join()
+            # Show images
+            results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), 0)
+            results1.save(save_dir='./yolo_images/image', exist_ok=False)
+           
             p = multiprocessing.Process(target=give_instruction, args=(labels, depth_image, depth_scale))
             p.start()
             #p.join()
