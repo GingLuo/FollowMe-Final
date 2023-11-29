@@ -104,6 +104,7 @@ def runner_realsense():
     cam = get_frame.Camera()
     count = 0
     p = None
+    depth_count = 0
     startAnnounce = "Welcome, System is ready"
     #get_instruction.textToSpeaker(startAnnounce)
     #p = multiprocessing.Process(target=get_instruction.textToSpeaker,args=(startAnnounce, ))
@@ -133,11 +134,13 @@ def runner_realsense():
             # Show images
             results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), 0)
             results1.save(save_dir='./yolo_images/image', exist_ok=False)
-           
+            with open(f"yolo_images/image{depth_count}/depth_{depth_scale}.txt", "w") as f:
+                f.write(str(depth_image))
             p = multiprocessing.Process(target=give_instruction, args=(labels, depth_image, depth_scale))
             p.start()
             #p.join()
-            count = 0	
+            count = 0
+            depth_count += 1
         else:
             #height, width, channels = color_img.shape
 

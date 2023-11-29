@@ -21,7 +21,7 @@ IMG_W = 640
 
 plurality = collections.defaultdict(int)
 #logging.basicConfig(filename="latencyLog4.log", level=logging.INFO)
-whiteList = set(["person", "door", "window", "desk", "bicycle", "parking meter", "bench", "backpack", "umbrella", "suitcase", "chair", "couch", "dining table", "tv", "laptop", "sink"])
+whiteList = set(["person", "door", "desk", "bicycle", "bench", "backpack", "umbrella", "suitcase", "chair", "couch", "dining table", "tv", "laptop", "sink"])
 
 def detection(org_img, boxs,depth_frame):
     img = org_img.copy()

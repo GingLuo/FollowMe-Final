@@ -15,8 +15,8 @@ IMG_W = 640
 
 class Capture:
     def __init__(self) -> None:
-        self.depth_fd = open('depth2.npy', 'wb')
-        self.rgb_fd = cv2.VideoWriter('rgb2.avi', cv2.VideoWriter_fourcc(*'MPEG'), 10, (IMG_W, IMG_H)) 
+        self.depth_fd = open('depth_new.npy', 'wb')
+        self.rgb_fd = cv2.VideoWriter('rgb_new.avi', cv2.VideoWriter_fourcc(*'MPEG'), 10, (IMG_W, IMG_H)) 
         self.scale = None
         self.counter_depth = 0
         self.counter_rgb = 0
@@ -24,9 +24,9 @@ class Capture:
     def set_scale(scale):
         self.scale = scale
 
-    def capture_depth(depth_frame):
-        np.save(self.depth_fd, np.array(depth_scale))
-        with open(f"{self.counter_depth}_{self.scale}.txt", "w") as f:
+    def capture_depth(depth_frame, name):
+        # np.save(self.depth_fd, np.array(depth_scale))
+        with open(f"yolo_images/{self.counter_depth}_{self.scale}.txt", "w") as f:
             f.write(str(depth_frame))
         self.counter_depth += 1
 
