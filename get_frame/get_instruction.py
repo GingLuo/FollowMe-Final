@@ -117,6 +117,15 @@ def textToSpeaker(text):
     engine.say(text)
     engine.runAndWait()
     engine.stop()
+
+def object_detection_fast(depth_image, label, depth_scale):
+    npArray = np.array(depth_image)
+    topLeft, bottomRight, l = label
+    centerX = (int)(topLeft[1] + bottomRight[1]) // 2
+    centerY = (int)(topLeft[0] + bottomRight[0]) // 2
+    newArray = np.round(npArray[centerX - selection_width : centerX + selection_width, centerY - selection_width: centerY + selection_width], 4)
+    return np.mean(newArray)*depth_scale
+
 # This is done for midterm demo testing.
 def testing_Object():
     return

@@ -22,7 +22,7 @@ IMG_H = 480
 IMG_W = 640
 
 plurality = collections.defaultdict(int)
-logging.basicConfig(filename="latencyLog4.log", level=logging.INFO)
+logging.basicConfig(filename="latencyLog5.log", level=logging.INFO)
 whiteList = set(["person", "door", "desk", "bicycle", "bench", "backpack", "umbrella", "suitcase", "chair", "couch", "dining table", "tv", "laptop", "sink"])
 
 def detection(org_img, boxs,depth_frame):
@@ -51,6 +51,7 @@ def yolo_model_load():
     return model, model2
 
 def give_instruction(labels, depth_image, depth_scale):
+    startTime = time.time()
     itemsFound = dict()
     for label in labels:
         print("label is:", label)
@@ -68,7 +69,11 @@ def give_instruction(labels, depth_image, depth_scale):
         if avex > 590  or avex < 50:
             print("the label is on side so omited")
             continue 
-        depth = get_instruction.object_depth_measurement_linear(depth_image, label, depth_scale)
+        timea = time.time()
+
+        depth = get_instruction.object_detection_fast(depth_image, label, depth_scale)
+        timeb = time.time()
+        logging.info("Latency for depth calculation: "+ str(timeb-timea))
         print("the depth we received is: ", str(depth))
         if plurality[label[2]] == 0:
             itemsFound[label[2]] = depth
@@ -76,19 +81,25 @@ def give_instruction(labels, depth_image, depth_scale):
         else:
             itemsFound[label[2]] = min(itemsFound[label[2]], depth)
             plurality[label[2]] += 1
+    textSpoken = []
     newItemsFound = dict()
     for item in itemsFound:
         distance = itemsFound[item]
         if distance != 0 and plurality[item] > 0:
             plurality[item] = 0
             text = item + " " + str(round(distance,1)) + "meters" + direction
-            p = multiprocessing.Process(target=get_instruction.textToSpeaker, args=(text,))
-            p.start()
-            p.join()
+            textSpoken.append(text)
+            #p = multiprocessing.Process(target=get_instruction.textToSpeaker, args=(text,))
+            #p.start()
         else:
             newItemsFound[item] = itemsFound[item]
+    t = ' '.join(textSpoken)
+    time1 = time.time()
+    get_instruction.textToSpeaker(t)
     itemsFound = newItemsFound
- 
+    finalTime = time.time()
+    logging.info("Latency for speaker: " + str(finalTime - time1))
+    logging.info("Latency for instruction process: " + str(finalTime - startTime))
 
 # Set up camera
 # cap = cv2.VideoCapture(0)  # Use the default camera (change to a different camera index if needed)
@@ -115,23 +126,28 @@ def runner_realsense():
         color_image, depth_frame, depth_image = cam.get_pic()
         depth_scale = cam.depth_scale
         depth_image = depth_image.reshape((depth_image.shape[0],depth_image.shape[1],1))
-
+        currTime = time.time()
+        logging.info("Latency for Camera Processing: " + str(currTime - startTime))
         results1 = model(color_image)
+        currTime2 = time.time()
+        logging.info("Latency for first model: " + str(currTime2 - currTime))
         results2 = model2(color_image)
+        currTime3 = time.time()
+        logging.info("Latency for second model: " + str(currTime3 - currTime2))
         results = pd.concat([results1.pandas().xyxy[0], results2.pandas().xyxy[0]], ignore_index=True)
         
         boxs = results.values
-
+        
         #color_img = detection(color_image, boxs, depth_frame)
         labels = get_instruction.receive_labels_map(results)
-        
-        # lastTime = time.time()
+        currTime4 = time.time()
+        logging.info("Latency for label processing: " + str(currTime4 - currTime3))
         count += 1
         if count == 5:
             if p != None:
                p.join()
             # Show images
-            results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), 0)
+            #results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), 0)
             #results1.save(save_dir='./yolo_images/image', exist_ok=False)
             #if depth_count <= 1:
                 #with open(f"yolo_images/image/depth_{depth_scale}.txt", "w+") as f:
@@ -139,8 +155,11 @@ def runner_realsense():
             #else:
                 #with open(f"yolo_images/image{depth_count}/depth_{depth_scale}.txt", "w+") as f:
                     #f.write(str(depth_image))
+            currTime5 = time.time()
             p = multiprocessing.Process(target=give_instruction, args=(labels, depth_image, depth_scale))
             p.start()
+            currTime6 = time.time()
+            print("Latency for instruction thread start: ", str(currTime6 - currTime5))
             count = 0
             depth_count += 1
         else:
@@ -160,8 +179,10 @@ def runner_realsense():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         lastTime = time.time()
-        logging.info('Latency: '+ str(lastTime - startTime))
-        
+        if count % 5 == 0:
+            logging.info('Latency for hard process: '+ str(lastTime - startTime))
+        else:
+            logging.info('Latency for easy process: ' + str(lastTime - startTime))
     # Release the camera and close the OpenCV window
     # cap.release()
     cv2.destroyAllWindows()
