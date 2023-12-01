@@ -147,8 +147,15 @@ def runner_realsense():
             if p != None:
                p.join()
             # Show images
-            #results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), 0)
-            #results1.save(save_dir='./yolo_images/image', exist_ok=False)
+            results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), dim=0)
+            res = []
+            for i in range(results1.pred[0].size(0)):
+                index = int(results1.pred[0][i, 5])
+                name = results1.names[index]
+                if name not in whiteList:
+                    res.append(i)
+            results1.pred[0] = results1.pred[0][res]
+            results1.save(save_dir='./yolo_images/image', exist_ok=False)
             #if depth_count <= 1:
                 #with open(f"yolo_images/image/depth_{depth_scale}.txt", "w+") as f:
                     #f.write(str(depth_image))
