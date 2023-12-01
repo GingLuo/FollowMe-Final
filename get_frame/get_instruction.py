@@ -1,4 +1,5 @@
 # get_instruction.py 
+# Author: George Chang
 # This file will calculate the distance from each object 
 # labeled by yolo and output instruction to the speaker. 
 # pixel indices inspection tool: https://pixspy.com
@@ -112,15 +113,13 @@ def object_depth_measurement_square(depth_image, label, depth_scale):
 
 def textToSpeaker(text):
     engine = pyttsx3.init('espeak')
-    engine.setProperty('volumn', 0.5)
+    engine.setProperty('volume', 0.5)
     engine.say(text)
-    
     engine.runAndWait()
-    
-    #engine.stop()
-    return
-
+    engine.stop()
+# This is done for midterm demo testing.
 def testing_Object():
+    return
     depth_scale = 0.0002500000118743628
     labels = [[(198, 230), (479, 385), "person"], [(131, 195), (479, 434), "person"], [(50, 148), (479, 493), "person"], [(0, 92), (479, 639), "person"]]
     
@@ -148,6 +147,7 @@ def testing_Object():
 
 if __name__ == "__main__":
     #testing_Object()
+    
     engine = pyttsx3.init('espeak')
     engine.say("Hey George How are you doing!")
     engine.runAndWait()

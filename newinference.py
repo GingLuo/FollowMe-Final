@@ -16,6 +16,8 @@ import time
 import logging
 import pandas as pd
 import os
+import pyttsx3
+import threading
 IMG_H = 480
 IMG_W = 640
 
@@ -104,11 +106,10 @@ def runner_realsense():
     model2 = model2.to(device)
     cam = get_frame.Camera()
     count = 0
-    p = None
     depth_count = 1
     startAnnounce = "Welcome, System is ready"
-    #get_instruction.textToSpeaker(startAnnounce)
-    #p = multiprocessing.Process(target=get_instruction.textToSpeaker,args=(startAnnounce, ))
+    p = multiprocessing.Process(target=get_instruction.textToSpeaker,args=(startAnnounce, ))
+    p.start()
     while True:
         startTime = time.time()
         color_image, depth_frame, depth_image = cam.get_pic()
@@ -118,9 +119,6 @@ def runner_realsense():
         results1 = model(color_image)
         results2 = model2(color_image)
         results = pd.concat([results1.pandas().xyxy[0], results2.pandas().xyxy[0]], ignore_index=True)
-
-
-        
         
         boxs = results.values
 
@@ -129,21 +127,20 @@ def runner_realsense():
         
         # lastTime = time.time()
         count += 1
-        if count == 10:
+        if count == 5:
             if p != None:
-                p.join()
+               p.join()
             # Show images
             results1.pred[0] = torch.cat((results1.pred[0], results2.pred[0]), 0)
-            results1.save(save_dir='./yolo_images/image', exist_ok=False)
-            if depth_count <= 1:
-                with open(f"yolo_images/image/depth_{depth_scale}.txt", "w+") as f:
-                    f.write(str(depth_image))
-            else:
-                with open(f"yolo_images/image{depth_count}/depth_{depth_scale}.txt", "w+") as f:
-                    f.write(str(depth_image))
+            #results1.save(save_dir='./yolo_images/image', exist_ok=False)
+            #if depth_count <= 1:
+                #with open(f"yolo_images/image/depth_{depth_scale}.txt", "w+") as f:
+                    #f.write(str(depth_image))
+            #else:
+                #with open(f"yolo_images/image{depth_count}/depth_{depth_scale}.txt", "w+") as f:
+                    #f.write(str(depth_image))
             p = multiprocessing.Process(target=give_instruction, args=(labels, depth_image, depth_scale))
             p.start()
-            #p.join()
             count = 0
             depth_count += 1
         else:
