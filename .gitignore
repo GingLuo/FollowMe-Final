@@ -1,3 +1,6 @@
 *.pyc
 *.pth
 .DS_Store
+*.pt
+*.pth
+*.jpg
